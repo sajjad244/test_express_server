@@ -48,20 +48,79 @@ const initDB = async () => {
 
 initDB();
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hell No!");
+// post method for users
+app.post("/users", async (req: Request, res: Response) => {
+  const {name, email} = req.body;
+  try {
+    const result = await pool.query(
+      `INSERT INTO users(name,email) VALUES($1, $2) RETURNING *`,
+      [name, email]
+    );
+    // console.log(result.rows[0]);
+    res.status(201).json({
+      // res.send ja kore //res.status.json({same vabe kaj kore})
+      success: true,
+      message: "Data inserted",
+      data: result.rows[0],
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
 });
 
-// post method
+// get method for All users
+app.get("/users", async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`SELECT * FROM users`);
 
-app.post("/", (req: Request, res: Response) => {
-  console.log(req.body);
+    res.status(201).json({
+      success: true,
+      message: "data received",
+      data: result.rows,
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      details: err,
+    });
+  }
+});
 
-  res.status(201).json({
-    // res.send ja kore //res.status.json({same vabe kaj kore})
-    success: true,
-    message: "api is working",
-  });
+// get single users
+app.get("/users/:id", async (req: Request, res: Response) => {
+  try {
+    const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [
+      req.params.id,
+    ]);
+
+    if (result.rows.length === 0) {
+      res.status(404).json({
+        success: false,
+        message: "user not found",
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "User fetched successfully",
+        data: result.rows[0],
+      });
+    }
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+      details: err,
+    });
+  }
+});
+
+// ! For server //!
+app.get("/", (req: Request, res: Response) => {
+  res.send("Hell No!");
 });
 
 app.listen(port, () => {
